@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send — VNP Email Utility</title>
+    <script>
+        if (!(localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token'))) {
+            window.location.replace('/login');
+        }
+    </script>
+    <link rel="stylesheet" href="/assets/sidebar.css">
+    <link rel="stylesheet" href="/assets/dashboard.css">
+    <link rel="stylesheet" href="send.css">
+</head>
+<body>
+    <div class="app-shell">
+        <div data-sidebar-mount data-active="send"></div>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1 class="page-title">Send</h1>
+                    <p class="page-subtitle">Compose a campaign, track jobs, and review sending history.</p>
+                </div>
+            </header>
+
+            <!-- ============ Tabs ============ -->
+            <div class="tabs" id="tabs">
+                <button class="tab active" data-tab="compose">Compose</button>
+                <button class="tab" data-tab="jobs">Jobs <span class="tab-badge" id="jobs-running-badge" hidden></span></button>
+                <button class="tab" data-tab="history">History</button>
+            </div>
+
+            <!-- ============ Compose ============ -->
+            <section class="tab-pane active" id="pane-compose">
+                <div class="compose-grid">
+                    <div class="data-card compose-setup">
+                        <div class="data-card-header">
+                            <div>
+                                <h2 class="data-title">1 · Message</h2>
+                                <p class="data-sub">Pick a template and write the subject line.</p>
+                            </div>
+                        </div>
+                        <div class="compose-body">
+                            <div class="field">
+                                <label>Template</label>
+                                <select id="template-select" class="select-input">
+                                    <option value="">Loading templates…</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Subject <span class="field-optional">— supports [[field]] tokens</span></label>
+                                <input type="text" id="subject-input" placeholder="e.g. An update for [[hotel_name]]" autocomplete="off">
+                            </div>
+                            <div class="template-fields" id="template-fields" hidden>
+                                <div class="template-fields-label">Template fields</div>
+                                <div class="field-chips" id="template-fields-chips"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="data-card contacts-card">
+                    <div class="data-card-header">
+                        <div>
+                            <h2 class="data-title">
+                                2 · Recipients
+                                <span class="data-count" id="recipients-count">0 selected</span>
+                            </h2>
+                            <p class="data-sub">Select contacts to send to, or select all matching.</p>
+                        </div>
+                        <div class="data-tools">
+                            <button class="btn btn-ghost" type="button" id="add-contact-btn">
+                                <svg viewBox="0 0 16 16" fill="none">
+                                    <circle cx="6" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/>
+                                    <path d="M1.5 14c0-2.5 2-4.5 4.5-4.5S10.5 11.5 10.5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path d="M12 5v4M14 7h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                                Add contact
+                            </button>
+                            <div class="search" id="search">
+                                <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+                                    <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                </svg>
+                                <span class="search-spinner" aria-hidden="true"></span>
+                                <input type="text" id="search-input" placeholder="Search contacts" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="select-banner" id="select-banner" hidden></div>
+
+                    <div class="data-table-wrap" id="contacts-table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr id="contacts-thead-row"></tr>
+                            </thead>
+                            <tbody id="contacts-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-pagination" id="contacts-pagination" hidden></div>
+                </section>
+
+                <div class="send-bar">
+                    <div class="send-bar-summary" id="send-summary">Select a template and recipients to begin.</div>
+                    <button class="btn btn-primary btn-lg" type="button" id="send-btn" disabled>
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <path d="M14 2L7 9M14 2l-4.5 12-2.5-5.5L1.5 6 14 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="btn-label">Send campaign</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ============ Jobs ============ -->
+            <section class="tab-pane" id="pane-jobs">
+                <section class="data-card">
+                    <div class="data-card-header">
+                        <div>
+                            <h2 class="data-title">Send jobs <span class="data-count" id="jobs-count">0 total</span></h2>
+                            <p class="data-sub">Bulk sends and how many have been delivered so far.</p>
+                        </div>
+                    </div>
+                    <div class="data-table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Template</th>
+                                    <th>Subject</th>
+                                    <th class="col-progress">Progress</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobs-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-pagination" id="jobs-pagination" hidden></div>
+                </section>
+            </section>
+
+            <!-- ============ History ============ -->
+            <section class="tab-pane" id="pane-history">
+                <section class="data-card">
+                    <div class="data-card-header">
+                        <div>
+                            <h2 class="data-title">Sending history <span class="data-count" id="history-count">0 total</span></h2>
+                            <p class="data-sub">Every email sent, the template used, and its status.</p>
+                        </div>
+                        <div class="data-tools">
+                            <div class="search" id="history-search">
+                                <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+                                    <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                </svg>
+                                <span class="search-spinner" aria-hidden="true"></span>
+                                <input type="text" id="history-search-input" placeholder="Search by recipient or subject" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="history-filters">
+                        <div class="status-tabs" id="history-status-tabs">
+                            <button class="status-tab active" data-status="">All</button>
+                            <button class="status-tab" data-status="sent">Sent</button>
+                            <button class="status-tab" data-status="failed">Failed</button>
+                        </div>
+                        <select id="history-template-filter" class="select-input select-inline">
+                            <option value="">All templates</option>
+                        </select>
+                    </div>
+                    <div class="data-table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Recipient</th>
+                                    <th>Template</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Sent at</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-pagination" id="history-pagination" hidden></div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <!-- ============ Filter Popover (single instance, repositioned per click) ============ -->
+    <div class="filter-popover" id="filter-popover" hidden></div>
+
+    <!-- ============ Add Contact Modal ============ -->
+    <div class="contact-modal-backdrop" id="add-modal" hidden>
+        <div class="contact-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="add" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="contact-modal-header">
+                <div class="contact-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="10" cy="9" r="4" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M3 20c0-3.87 3.13-7 7-7s7 3.13 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M19 8v6M22 11h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h2 class="contact-modal-title">Add a contact</h2>
+                <p class="contact-modal-sub">Add a single recipient to your contact list.</p>
+            </header>
+            <form class="contact-form" id="add-form" novalidate>
+                <div class="form-row-2">
+                    <div class="field"><label>First name</label><input type="text" name="first_name" autocomplete="off"></div>
+                    <div class="field"><label>Last name</label><input type="text" name="last_name" autocomplete="off"></div>
+                </div>
+                <div class="field"><label>Email</label><input type="email" name="email" required autocomplete="off"></div>
+                <div class="form-row-2">
+                    <div class="field"><label>Hotel name</label><input type="text" name="hotel_name" autocomplete="off"></div>
+                    <div class="field"><label>Portfolio</label><input type="text" name="portfolio" autocomplete="off"></div>
+                </div>
+                <p class="form-error" id="add-error" role="alert" hidden></p>
+                <div class="contact-modal-actions">
+                    <button type="button" class="btn btn-ghost" data-close="add">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="add-submit">
+                        <span class="btn-spinner" aria-hidden="true"></span>
+                        <span class="btn-label">Create contact</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ Send Confirm Modal ============ -->
+    <div class="contact-modal-backdrop" id="send-modal" hidden>
+        <div class="contact-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="send" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="contact-modal-header">
+                <div class="contact-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2 class="contact-modal-title">Send this campaign?</h2>
+                <p class="contact-modal-sub">Review before sending — this can't be undone.</p>
+            </header>
+            <div class="send-summary-box" id="send-summary-box"></div>
+            <p class="send-note">Emails are sent gradually to respect Gmail's rate limits, so large jobs take a while. Track progress in the Jobs tab.</p>
+            <p class="form-error" id="send-error" role="alert" hidden></p>
+            <div class="contact-modal-actions">
+                <button type="button" class="btn btn-ghost" data-close="send">Cancel</button>
+                <button type="button" class="btn btn-primary" id="send-confirm">
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    <span class="btn-label">Send now</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ Toast ============ -->
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+        <span class="toast-icon"></span>
+        <span class="toast-text"></span>
+    </div>
+
+    <script src="/assets/sidebar.js"></script>
+    <script src="send.js"></script>
+</body>
+</html>

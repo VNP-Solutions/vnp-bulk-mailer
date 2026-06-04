@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacts — VNP Email Utility</title>
+    <script>
+        if (!(localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token'))) {
+            window.location.replace('/login');
+        }
+    </script>
+    <link rel="stylesheet" href="/assets/sidebar.css">
+    <link rel="stylesheet" href="/assets/dashboard.css">
+    <link rel="stylesheet" href="contacts.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Sidebar is rendered into this mount by /assets/sidebar.js -->
+        <div data-sidebar-mount data-active="contacts"></div>
+
+        <!-- ============ Main content ============ -->
+        <main class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1 class="page-title">Contacts</h1>
+                    <p class="page-subtitle">Manage the recipients for your email campaigns.</p>
+                </div>
+                <div class="page-actions">
+                    <button class="btn btn-ghost" type="button" id="bulk-upload-btn">
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <path d="M8 11V3M5 6l3-3 3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2.5 11v1.5A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Bulk upload
+                    </button>
+                    <button class="btn btn-primary" type="button" id="add-contact-btn">
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <circle cx="6" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M1.5 14c0-2.5 2-4.5 4.5-4.5S10.5 11.5 10.5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M12 5v4M14 7h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        Add contact
+                    </button>
+                </div>
+            </header>
+
+            <section class="data-card">
+                <div class="data-card-header">
+                    <div>
+                        <h2 class="data-title">
+                            Contacts
+                            <span class="data-count" id="data-count">0 total</span>
+                        </h2>
+                        <p class="data-sub">Search and filter by name, email, hotel, or portfolio.</p>
+                    </div>
+                    <div class="data-tools">
+                        <button class="btn btn-danger bulk-delete-btn" id="bulk-delete-btn" type="button" hidden>
+                            <svg viewBox="0 0 16 16" fill="none">
+                                <path d="M2.5 4.5h11M6 4.5V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5M12.4 4.5l-.6 8.6a1.5 1.5 0 0 1-1.5 1.4H5.7a1.5 1.5 0 0 1-1.5-1.4l-.6-8.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Delete <span id="bulk-delete-count"></span>
+                        </button>
+                        <div class="export-wrap" id="export-wrap">
+                            <button class="btn btn-ghost export-btn" id="export-btn" type="button">
+                                <svg viewBox="0 0 16 16" fill="none">
+                                    <path d="M8 2v8M4.5 6.5L8 10l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M2.5 11v1.5A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Export
+                                <svg class="export-chevron" viewBox="0 0 12 12" fill="none">
+                                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <div class="export-menu" id="export-menu" hidden>
+                                <button class="export-option" type="button" data-action="export-all">
+                                    <svg viewBox="0 0 16 16" fill="none">
+                                        <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    </svg>
+                                    Export all
+                                </button>
+                                <button class="export-option" type="button" data-action="export-selected" id="export-selected-btn" disabled>
+                                    <svg viewBox="0 0 16 16" fill="none">
+                                        <rect x="2.5" y="2.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                                        <path d="M5.5 8l2 2 3-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    <span>Export selected <span class="export-count" id="export-count" hidden></span></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="search" id="search">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+                                <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            </svg>
+                            <span class="search-spinner" aria-hidden="true"></span>
+                            <input type="text" id="search-input" placeholder="Search contacts" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-wrap" id="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr id="data-thead-row"></tr>
+                        </thead>
+                        <tbody id="data-tbody">
+                            <!-- rows injected by contacts.js -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="data-pagination" id="data-pagination" hidden></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ============ Filter Popover (single instance, repositioned per click) ============ -->
+    <div class="filter-popover" id="filter-popover" hidden></div>
+
+    <!-- ============ Add Contact Modal ============ -->
+    <div class="contact-modal-backdrop" id="add-modal" hidden>
+        <div class="contact-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="add" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="contact-modal-header">
+                <div class="contact-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="10" cy="9" r="4" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M3 20c0-3.87 3.13-7 7-7s7 3.13 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M19 8v6M22 11h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h2 class="contact-modal-title">Add a contact</h2>
+                <p class="contact-modal-sub">Add a single recipient to your contact list.</p>
+            </header>
+            <form class="contact-form" id="add-form" novalidate>
+                <div class="form-row-2">
+                    <div class="field"><label>First name</label><input type="text" name="first_name" autocomplete="off"></div>
+                    <div class="field"><label>Last name</label><input type="text" name="last_name" autocomplete="off"></div>
+                </div>
+                <div class="field"><label>Email</label><input type="email" name="email" required autocomplete="off"></div>
+                <div class="form-row-2">
+                    <div class="field"><label>Hotel name</label><input type="text" name="hotel_name" autocomplete="off"></div>
+                    <div class="field"><label>Portfolio</label><input type="text" name="portfolio" autocomplete="off"></div>
+                </div>
+                <p class="form-error" id="add-error" role="alert" hidden></p>
+                <div class="contact-modal-actions">
+                    <button type="button" class="btn btn-ghost" data-close="add">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="add-submit">
+                        <span class="btn-spinner" aria-hidden="true"></span>
+                        <span class="btn-label">Create contact</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ Bulk Upload Modal (dropzone) ============ -->
+    <div class="contact-modal-backdrop" id="bulk-modal" hidden>
+        <div class="contact-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="bulk" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="contact-modal-header">
+                <div class="contact-modal-icon accent">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 16V4M8 8l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2 class="contact-modal-title">Bulk upload contacts</h2>
+                <p class="contact-modal-sub">Upload a spreadsheet to add many contacts at once.</p>
+            </header>
+
+            <section class="dropzone-card" id="dropzone">
+                <input type="file" id="file-input" accept=".csv,.xls,.xlsx" hidden>
+                <div class="dropzone-inner">
+                    <div class="upload-badge">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <p class="dropzone-text">
+                        <span class="link">Click here</span> to upload your file or drag and drop
+                    </p>
+                    <p class="dropzone-meta">Supported formats: .csv, .xls, .xlsx &nbsp;·&nbsp; up to 20 MB</p>
+                </div>
+            </section>
+
+            <div class="bulk-hint">
+                <div class="bulk-hint-top">
+                    <span class="bulk-hint-label">Expected columns</span>
+                    <button type="button" class="bulk-template-btn" id="download-template-btn">
+                        <span class="btn-mini-spinner" id="template-spinner" hidden></span>
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <path d="M8 2v8M4.5 6.5L8 10l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2.5 11v1.5A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Download template
+                    </button>
+                </div>
+                <div class="bulk-hint-cols">
+                    <span>First Name</span><span>Last Name</span><span>Email</span><span>Hotel Name</span><span>Portfolio</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ Upload Progress Modal (state machine) ============ -->
+    <div class="modal-backdrop" id="upload-modal" hidden>
+        <div class="modal state-uploading" id="modal">
+            <div class="modal-icon">
+                <div class="modal-spinner"></div>
+                <svg class="modal-tick" viewBox="0 0 60 60">
+                    <circle cx="30" cy="30" r="26"/>
+                    <path d="M18 30 L27 39 L42 22"/>
+                </svg>
+                <svg class="modal-cross" viewBox="0 0 60 60">
+                    <circle cx="30" cy="30" r="26"/>
+                    <path d="M21 21 L39 39 M39 21 L21 39"/>
+                </svg>
+            </div>
+            <h3 class="modal-title" id="modal-title">Uploading file</h3>
+            <p class="modal-subtitle" id="modal-subtitle">Preparing…</p>
+
+            <div class="modal-progress"><div class="modal-progress-bar" id="modal-progress-bar"></div></div>
+            <p class="modal-progress-text" id="modal-progress-text">0%</p>
+
+            <div class="modal-errors" id="modal-errors" hidden>
+                <div class="modal-errors-title" id="modal-errors-title">Rows that failed</div>
+                <ul id="modal-errors-list"></ul>
+            </div>
+
+            <div class="modal-actions" id="modal-actions" hidden>
+                <button class="btn btn-primary" id="modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ Delete Confirm Modal ============ -->
+    <div class="contact-modal-backdrop" id="delete-modal" hidden>
+        <div class="contact-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="delete" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="contact-modal-header">
+                <div class="contact-modal-icon danger">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L2 22h20L12 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        <path d="M12 9v5M12 17v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h2 class="contact-modal-title">Delete contact?</h2>
+                <p class="contact-modal-sub">This permanently removes <strong id="delete-name">this contact</strong> from your list. This can't be undone.</p>
+            </header>
+            <p class="form-error" id="delete-error" role="alert" hidden></p>
+            <div class="contact-modal-actions">
+                <button type="button" class="btn btn-ghost" data-close="delete">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-submit">
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    <span class="btn-label">Delete contact</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ Bulk Delete Confirm Modal ============ -->
+    <div class="contact-modal-backdrop" id="bulk-delete-modal" hidden>
+        <div class="contact-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="bulk-delete" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="contact-modal-header">
+                <div class="contact-modal-icon danger">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L2 22h20L12 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        <path d="M12 9v5M12 17v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h2 class="contact-modal-title">Delete <span id="bulk-delete-name">contacts</span>?</h2>
+                <p class="contact-modal-sub">This permanently removes the selected contacts from your list. This can't be undone.</p>
+            </header>
+            <p class="form-error" id="bulk-delete-error" role="alert" hidden></p>
+            <div class="contact-modal-actions">
+                <button type="button" class="btn btn-ghost" data-close="bulk-delete">Cancel</button>
+                <button type="button" class="btn btn-danger" id="bulk-delete-submit">
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    <span class="btn-label">Delete contacts</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ Toast ============ -->
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+        <span class="toast-icon"></span>
+        <span class="toast-text"></span>
+    </div>
+
+    <script src="/assets/sidebar.js"></script>
+    <script src="contacts.js"></script>
+</body>
+</html>

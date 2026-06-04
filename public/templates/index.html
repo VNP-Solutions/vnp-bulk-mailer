@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates — VNP Email Utility</title>
+    <script>
+        if (!(localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token'))) {
+            window.location.replace('/login');
+        }
+    </script>
+    <link rel="stylesheet" href="/assets/sidebar.css">
+    <link rel="stylesheet" href="/assets/dashboard.css">
+    <link rel="stylesheet" href="templates.css">
+</head>
+<body>
+    <div class="app-shell">
+        <div data-sidebar-mount data-active="templates"></div>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1 class="page-title">Templates</h1>
+                    <p class="page-subtitle">Upload HTML email templates with <code>[[field]]</code> placeholders.</p>
+                </div>
+                <div class="page-actions">
+                    <button class="btn btn-ghost" type="button" id="upload-template-btn">
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <path d="M8 11V3M5 6l3-3 3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2.5 11v1.5A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Upload template
+                    </button>
+                    <button class="btn btn-primary" type="button" id="create-template-btn">
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                        Create template
+                    </button>
+                </div>
+            </header>
+
+            <section class="data-card">
+                <div class="data-card-header">
+                    <div>
+                        <h2 class="data-title">
+                            Email templates
+                            <span class="data-count" id="data-count">0 total</span>
+                        </h2>
+                        <p class="data-sub">Search by template name or field.</p>
+                    </div>
+                    <div class="data-tools">
+                        <div class="search" id="search">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+                                <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            </svg>
+                            <span class="search-spinner" aria-hidden="true"></span>
+                            <input type="text" id="search-input" placeholder="Search templates" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-wrap" id="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-name">Name</th>
+                                <th class="col-fields">Fields</th>
+                                <th class="col-created">Uploaded</th>
+                                <th class="col-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-tbody">
+                            <!-- rows injected by templates.js -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="data-pagination" id="data-pagination" hidden></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ============ Upload Template Modal ============ -->
+    <div class="contact-modal-backdrop" id="upload-modal" hidden>
+        <div class="contact-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="upload" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="contact-modal-header">
+                <div class="contact-modal-icon accent">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M3 9h18M8 4v5" stroke="currentColor" stroke-width="1.8"/>
+                    </svg>
+                </div>
+                <h2 class="contact-modal-title">Upload a template</h2>
+                <p class="contact-modal-sub">Upload an HTML file. Any <code>[[field]]</code> placeholders are detected automatically.</p>
+            </header>
+            <form class="contact-form" id="upload-form" novalidate>
+                <div class="field">
+                    <label>Template name <span class="field-optional">— optional, defaults to the file name</span></label>
+                    <input type="text" name="name" id="template-name" autocomplete="off" placeholder="e.g. OTA POST Audit Enhancement">
+                </div>
+
+                <input type="file" id="file-input" accept=".html,.htm" hidden>
+
+                <section class="dropzone-card" id="dropzone">
+                    <div class="dropzone-inner">
+                        <div class="upload-badge">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <p class="dropzone-text"><span class="link">Click here</span> to choose an HTML file or drag and drop</p>
+                        <p class="dropzone-meta">Supported formats: .html, .htm &nbsp;·&nbsp; up to 5 MB</p>
+                    </div>
+                </section>
+
+                <div class="selected-file" id="selected-file" hidden>
+                    <svg class="selected-file-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                        <path d="M14 3v6h6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                    </svg>
+                    <div class="selected-file-meta">
+                        <div class="selected-file-name" id="selected-file-name">file.html</div>
+                        <div class="selected-file-size" id="selected-file-size"></div>
+                    </div>
+                    <button type="button" class="selected-file-remove" id="selected-file-remove" aria-label="Remove file">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    </button>
+                </div>
+
+                <p class="form-error" id="upload-error" role="alert" hidden></p>
+                <div class="contact-modal-actions">
+                    <button type="button" class="btn btn-ghost" data-close="upload">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="upload-submit">
+                        <span class="btn-spinner" aria-hidden="true"></span>
+                        <span class="btn-label">Upload template</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ View Template Modal ============ -->
+    <div class="contact-modal-backdrop" id="view-modal" hidden>
+        <div class="contact-modal view-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="view" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="view-modal-header">
+                <div class="view-head-main">
+                    <h2 class="contact-modal-title" id="view-name">Template</h2>
+                    <p class="contact-modal-sub" id="view-meta"></p>
+                </div>
+                <div class="view-mode-toggle" id="view-mode-toggle">
+                    <button class="view-mode-btn active" type="button" data-mode="preview">Preview</button>
+                    <button class="view-mode-btn" type="button" data-mode="edit">Edit HTML</button>
+                </div>
+            </header>
+
+            <div class="view-section">
+                <div class="view-section-label">Fields <span id="view-fields-count" class="view-count"></span></div>
+                <div class="field-chips" id="view-fields"></div>
+            </div>
+
+            <!-- Preview pane -->
+            <div class="view-pane" id="view-pane-preview">
+                <div class="preview-frame-wrap">
+                    <iframe id="view-preview" class="preview-frame" title="Template preview" sandbox></iframe>
+                </div>
+            </div>
+
+            <!-- Edit pane -->
+            <div class="view-pane" id="view-pane-edit" hidden>
+                <div class="field">
+                    <label>Template name</label>
+                    <input type="text" id="edit-name" autocomplete="off">
+                </div>
+                <div class="field code-field">
+                    <div class="editor-label-row">
+                        <label>HTML <span class="field-optional">— wrap dynamic values in [[field]]</span></label>
+                        <div class="insert-field-wrap" data-insert-for="edit-html">
+                            <button type="button" class="insert-field-btn" data-insert-toggle>
+                                <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                                Insert field
+                                <svg class="insert-chev" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                            <div class="insert-field-menu" hidden></div>
+                        </div>
+                    </div>
+                    <div class="code-editor-shell">
+                        <pre class="code-highlight" aria-hidden="true"><code></code></pre>
+                        <textarea id="edit-html" class="html-editor" spellcheck="false" wrap="off"></textarea>
+                    </div>
+                </div>
+                <p class="form-error" id="edit-error" role="alert" hidden></p>
+                <div class="view-edit-actions">
+                    <button type="button" class="btn btn-ghost" id="edit-cancel">Discard changes</button>
+                    <button type="button" class="btn btn-primary" id="edit-save">
+                        <span class="btn-spinner" aria-hidden="true"></span>
+                        <span class="btn-label">Save changes</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ Create Template Modal (paste HTML) ============ -->
+    <div class="contact-modal-backdrop" id="create-modal" hidden>
+        <div class="contact-modal create-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="create" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="contact-modal-header">
+                <div class="contact-modal-icon accent">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h2 class="contact-modal-title">Create a template</h2>
+                <p class="contact-modal-sub">Paste your email HTML. Wrap dynamic values in <code>[[field]]</code>.</p>
+            </header>
+            <form class="contact-form" id="create-form" novalidate>
+                <div class="field">
+                    <label>Template name</label>
+                    <input type="text" id="create-name" name="name" autocomplete="off" placeholder="e.g. Welcome Email">
+                </div>
+                <div class="field code-field">
+                    <div class="editor-label-row">
+                        <label>HTML</label>
+                        <div class="insert-field-wrap" data-insert-for="create-html">
+                            <button type="button" class="insert-field-btn" data-insert-toggle>
+                                <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                                Insert field
+                                <svg class="insert-chev" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                            <div class="insert-field-menu" hidden></div>
+                        </div>
+                    </div>
+                    <div class="code-editor-shell">
+                        <pre class="code-highlight" aria-hidden="true"><code></code></pre>
+                        <textarea id="create-html" class="html-editor" spellcheck="false" wrap="off" placeholder="<!DOCTYPE html>&#10;<html>&#10;  <body>&#10;    <h1>Hi [[first_name]]!</h1>&#10;  </body>&#10;</html>"></textarea>
+                    </div>
+                    <div class="detected-fields" id="create-detected"></div>
+                </div>
+                <p class="form-error" id="create-error" role="alert" hidden></p>
+                <div class="contact-modal-actions">
+                    <button type="button" class="btn btn-ghost" data-close="create">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="create-submit">
+                        <span class="btn-spinner" aria-hidden="true"></span>
+                        <span class="btn-label">Create template</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ Delete Confirm Modal ============ -->
+    <div class="contact-modal-backdrop" id="delete-modal" hidden>
+        <div class="contact-modal" role="dialog" aria-modal="true">
+            <button class="contact-modal-close" type="button" data-close="delete" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <header class="contact-modal-header">
+                <div class="contact-modal-icon danger">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L2 22h20L12 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        <path d="M12 9v5M12 17v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h2 class="contact-modal-title">Delete template?</h2>
+                <p class="contact-modal-sub">This permanently removes <strong id="delete-name">this template</strong>. This can't be undone.</p>
+            </header>
+            <p class="form-error" id="delete-error" role="alert" hidden></p>
+            <div class="contact-modal-actions">
+                <button type="button" class="btn btn-ghost" data-close="delete">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-submit">
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    <span class="btn-label">Delete template</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ Toast ============ -->
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+        <span class="toast-icon"></span>
+        <span class="toast-text"></span>
+    </div>
+
+    <script src="/assets/sidebar.js"></script>
+    <script src="templates.js"></script>
+</body>
+</html>

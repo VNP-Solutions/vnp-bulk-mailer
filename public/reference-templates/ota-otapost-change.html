@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VNP Solutions – OTA POST Audit Enhancement</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@400;500&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f4f4f0; font-family: 'DM Sans', sans-serif; padding: 40px 20px; }
+  .email-wrap { max-width: 680px; margin: 0 auto; }
+  .email-header { background: #0a1f3c; padding: 40px 48px 36px; border-radius: 16px 16px 0 0; text-align: center; }
+  .email-header img { max-width: 260px; height: auto; display: block; margin: 0 auto; filter: brightness(0) invert(1); }
+  .header-badge { display: inline-block; background: #1a6fc4; color: #e8f1fb; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 7px 20px; border-radius: 20px; margin-top: 22px; font-family: 'DM Sans', sans-serif; }
+  .email-body { background: #ffffff; border: 1px solid #e0dfd8; border-top: none; padding: 44px 52px; border-radius: 0 0 16px 16px; }
+  .greeting { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: #0a1f3c; margin-bottom: 16px; }
+  .intro-text { font-size: 15px; line-height: 1.8; color: #444; margin-bottom: 28px; }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 28px 0; }
+  .stat-card { background: #0a1f3c; border-radius: 12px; padding: 22px 16px; text-align: center; }
+  .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 27px; font-weight: 600; color: #7cc4f8; line-height: 1.2; }
+  .stat-label { font-size: 11px; color: #8dadc8; margin-top: 6px; line-height: 1.5; text-transform: uppercase; letter-spacing: 1px; }
+  .section-block { margin-top: 36px; }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: #0a1f3c; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title svg { flex-shrink: 0; }
+  .section-divider { border: none; border-top: 1px solid #e5e3db; margin-bottom: 18px; }
+  .body-text { font-size: 15px; line-height: 1.8; color: #444; margin-bottom: 14px; }
+  .benefit-list { list-style: none; margin-bottom: 18px; }
+  .benefit-list li { display: flex; align-items: flex-start; gap: 12px; font-size: 15px; color: #444; padding: 9px 0; border-bottom: 1px solid #eeede7; line-height: 1.65; }
+  .benefit-list li:last-child { border-bottom: none; }
+  .benefit-list li svg { flex-shrink: 0; margin-top: 2px; }
+  .timeline-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 18px 0 24px; }
+  .timeline-item { background: #f8f7f4; border: 1px solid #e5e3db; border-radius: 12px; padding: 18px; text-align: center; }
+  .timeline-icon { margin-bottom: 10px; }
+  .timeline-label { font-size: 13px; font-weight: 500; color: #0a1f3c; }
+  .timeline-sub { font-size: 12px; color: #666; margin-top: 5px; line-height: 1.45; }
+  .legal-box { background: #f3f7fc; border-left: 3px solid #1a6fc4; border-radius: 0 8px 8px 0; padding: 20px 22px; margin: 24px 0; }
+  .legal-box p { font-size: 13.5px; line-height: 1.75; color: #555; margin-bottom: 10px; }
+  .legal-box p:last-child { margin: 0; }
+  .cta-box { background: #0a1f3c; border-radius: 12px; padding: 30px 36px; margin: 36px 0 0; text-align: center; }
+  .cta-box p { color: #8dadc8; font-size: 14px; margin-bottom: 18px; line-height: 1.65; }
+  .cta-btn { display: inline-block; background: #1a6fc4; color: #fff; font-size: 13px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; padding: 13px 34px; border-radius: 6px; text-decoration: none; }
+  .sign-off { margin: 36px 0 0; font-size: 15px; line-height: 1.85; color: #555; }
+  .sign-off strong { color: #0a1f3c; font-weight: 500; }
+  .email-footer { background: #f3f2ee; border: 1px solid #e0dfd8; border-top: none; border-radius: 0 0 16px 16px; padding: 18px 48px; text-align: center; margin-top: -16px; border-radius: 0 0 16px 16px; }
+  .email-footer p { font-size: 11px; color: #888; margin: 0; line-height: 1.75; }
+  .accent { color: #1a6fc4; }
+</style>
+</head>
+<body>
+<div class="email-wrap">
+
+  <!-- HEADER -->
+  <div class="email-header">
+    <img src="https://parser-demo.dashboardvnps.com/logo/logo.svg" alt="VNP Solutions Logo">
+    <div class="header-badge">&#128227;&nbsp; Service Enhancement Notice</div>
+  </div>
+
+  <!-- BODY -->
+  <div class="email-body">
+    <p class="greeting">Dear [[Portfolio]] Team,</p>
+    <p class="intro-text">First and foremost, we would like to sincerely thank you for your continued partnership and trust in VNP Solutions. Your support over the years has allowed us to continuously enhance and evolve our OTA Revenue Recovery Services to better support and maximize recoverable revenue opportunities.</p>
+
+    <!-- STATS -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-num">$600M+</div>
+        <div class="stat-label">Revenue Recovered</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">Since 2012</div>
+        <div class="stat-label">Serving Hotel Partners Worldwide</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">85%</div>
+        <div class="stat-label">Recovered Funds Retained by Hotels</div>
+      </div>
+    </div>
+
+    <!-- WHAT'S NEW -->
+    <div class="section-block">
+      <div class="section-title">
+        <svg width="20" height="20" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6.002 6.002 0 0 0-4-5.659V5a2 2 0 1 0-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9"/></svg>
+        What's New
+      </div>
+      <hr class="section-divider">
+      <p class="body-text">As part of our ongoing commitment to innovation, efficiency, and operational improvement, we are pleased to officially announce the transition of all participating OTA Virtual Credit Card (VCC) hotels to our enhanced <strong class="accent">OTA POST Audit Program</strong>, effective immediately.</p>
+    </div>
+
+    <!-- WHAT IS OTA POST -->
+    <div class="section-block">
+      <div class="section-title">
+        <svg width="20" height="20" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        What Is OTA POST?
+      </div>
+      <hr class="section-divider">
+      <p class="body-text">OTA POST is our next-generation OTA Revenue Recovery solution designed to streamline and automate the recovery process through our proprietary VCC processing system. Under OTA POST:</p>
+      <ul class="benefit-list">
+        <li>
+          <svg width="18" height="18" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          VNP Solutions processes OTA-issued VCC payments directly through our secure system
+        </li>
+        <li>
+          <svg width="18" height="18" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Hotels continue to retain <strong>85%</strong> of all recovered funds
+        </li>
+        <li>
+          <svg width="18" height="18" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4M15 10h5M20 14H9.5a3.5 3.5 0 0 1 0-7H15"/></svg>
+          VNP Solutions absorbs all associated credit card processing fees
+        </li>
+        <li>
+          <svg width="18" height="18" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          VNP Solutions assumes responsibility for managing and mitigating potential chargeback exposure
+        </li>
+        <li>
+          <svg width="18" height="18" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          The need for manual posting and follow-up at the property level is significantly reduced
+        </li>
+        <li>
+          <svg width="18" height="18" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Recovery operations become centralized, more efficient, and more transparent
+        </li>
+      </ul>
+    </div>
+
+    <!-- AUDIT PROCESS -->
+    <div class="section-block">
+      <div class="section-title">
+        <svg width="20" height="20" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+        Continuous Weekly Audit Process
+      </div>
+      <hr class="section-divider">
+      <p class="body-text">OTA POST services will operate on a continuous weekly audit cycle across all participating properties. To allow each hotel adequate time to internally identify and resolve discrepancies independently, VNP Solutions will maintain a rolling 30-day (one-month) grace period prior to initiating each audit review.</p>
+
+      <div class="timeline-row">
+        <div class="timeline-item">
+          <div class="timeline-icon">
+            <svg width="24" height="24" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </div>
+          <div class="timeline-label">Weekly Audits</div>
+          <div class="timeline-sub">Continuous cycle across all properties</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-icon">
+            <svg width="24" height="24" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </div>
+          <div class="timeline-label">30-Day Grace Period</div>
+          <div class="timeline-sub">Time to resolve discrepancies internally</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-icon">
+            <svg width="24" height="24" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+          </div>
+          <div class="timeline-label">Collaborative Review</div>
+          <div class="timeline-sub">Efficient recovery, minimal disruption</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEGAL / ADDENDUM -->
+    <div class="section-block">
+      <div class="section-title">
+        <svg width="20" height="20" fill="none" stroke="#1a6fc4" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Agreement Addendum &amp; Continuation of Services
+      </div>
+      <hr class="section-divider">
+
+      <div class="legal-box">
+        <p>This communication shall serve as an <strong>official addendum and amendment</strong> to the existing OTA Revenue Recovery Services Agreement currently on file between your organization and VNP Solutions. By continuing to utilize VNP Solutions' services following receipt of this notice, Client acknowledges and agrees to the implementation of the OTA POST program enhancements and updated operational procedures described herein.</p>
+        <p>Except as specifically modified by this notice, all remaining terms and conditions of the existing agreement shall remain in full force and effect. <strong>No further action is required on your part</strong> at this time unless you would prefer to execute a separate formal written addendum for internal documentation purposes, in which case we would be happy to provide one upon request.</p>
+        <p>Should you wish to discuss these updates in greater detail, please let us know within the next <strong>seven (7) days</strong>. If we do not hear back within that timeframe, we will accept that there are no objections or concerns regarding the updated service model and will proceed accordingly under the terms outlined in this notice.</p>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <!-- <div class="cta-box">
+      <p>We are extremely excited about these enhancements and believe they will provide even greater efficiency, transparency, and financial value to your organization. We'd love to walk you through everything in a brief online meeting.</p>
+      <a href="mailto:" class="cta-btn">&#128249;&nbsp; Schedule a Meeting</a>
+    </div> -->
+
+    <!-- SIGN OFF -->
+    <div class="sign-off">
+      <p>Thank you again for your continued partnership and trust in VNP Solutions.</p>
+      <p style="margin-top: 20px;">Warm regards,<br><strong>VNP Solutions</strong><br><span style="font-size:13px; color:#888;">OTA Revenue Recovery Services</span></p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f3f2ee; border:1px solid #e0dfd8; border-top:none; border-radius:0 0 16px 16px; padding:18px 48px; text-align:center;">
+    <p style="font-size:11px; color:#888; line-height:1.75; margin:0;">This email and its contents constitute a legally binding addendum to the service agreement on file between VNP Solutions and the recipient's organization, effective as of the date of transmission. This document supersedes any prior verbal or written communications regarding the specific service modifications described herein. If you believe you have received this communication in error, please contact VNP Solutions immediately.</p>
+  </div>
+
+</div>
+</body>
+</html>
