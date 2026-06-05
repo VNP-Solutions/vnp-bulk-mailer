@@ -116,7 +116,9 @@ module.exports = {
                     template_name: { type: 'string', example: 'Welcome Email' },
                     subject: { type: 'string' },
                     mode: { type: 'string', enum: ['selected', 'all'] },
-                    status: { type: 'string', enum: ['queued', 'running', 'completed', 'partial', 'failed', 'canceled'] },
+                    cc: { type: 'array', items: { type: 'string' } },
+                    status: { type: 'string', enum: ['queued', 'running', 'cooldown', 'completed', 'partial', 'failed', 'canceled'] },
+                    resume_at: { type: 'string', format: 'date-time', description: 'When a cooled-down job will resume (rate-limit window frees).' },
                     total: { type: 'integer', example: 120 },
                     sent: { type: 'integer', example: 84 },
                     failed: { type: 'integer', example: 1 },
@@ -974,6 +976,33 @@ module.exports = {
                 security: [{ bearerAuth: [] }],
                 responses: {
                     200: { description: 'Template names', content: { 'application/json': { schema: { type: 'object', properties: { templates: { type: 'array', items: { type: 'string' } } } } } } },
+                },
+            },
+        },
+        '/send/budget': {
+            get: {
+                tags: ['Send'],
+                summary: 'Remaining rolling rate-limit capacity (this hour / last 24h)',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: {
+                        description: 'Budget',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        hourlyLimit: { type: 'integer', example: 100 },
+                                        dailyLimit: { type: 'integer', example: 1000 },
+                                        sentLastHour: { type: 'integer', example: 38 },
+                                        sentLastDay: { type: 'integer', example: 412 },
+                                        remainingHour: { type: 'integer', example: 62 },
+                                        remainingDay: { type: 'integer', example: 588 },
+                                    },
+                                },
+                            },
+                        },
+                    },
                 },
             },
         },

@@ -25,6 +25,17 @@
         }[ch]));
     }
 
+    // Parse a comma-separated CC string into a deduped list of addresses.
+    function parseCc(value) {
+        const seen = new Set();
+        const out = [];
+        String(value || '').split(',').forEach((part) => {
+            const v = part.trim().toLowerCase();
+            if (v && v.includes('@') && !seen.has(v)) { seen.add(v); out.push(v); }
+        });
+        return out;
+    }
+
     function debounce(fn, ms) {
         let timer;
         return (...args) => {
@@ -159,7 +170,7 @@
         activeTab = tab;
         tabsEl.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === btn));
         document.querySelectorAll('.tab-pane').forEach((p) => p.classList.toggle('active', p.id === `pane-${tab}`));
-        if (tab === 'jobs') { jobsPage = 1; loadJobs(); startJobsPoll(); }
+        if (tab === 'jobs') { jobsPage = 1; startJobsPoll(); }
         else stopJobsPoll();
         if (tab === 'history') { loadHistoryTemplates(); loadHistory(); }
     });
@@ -170,6 +181,7 @@
     const PAGE_SIZE = 10;
     const templateSelect = document.getElementById('template-select');
     const subjectInput = document.getElementById('subject-input');
+    const ccInput = document.getElementById('cc-input');
     const templateFieldsWrap = document.getElementById('template-fields');
     const templateFieldsChips = document.getElementById('template-fields-chips');
     const contactsTbody = document.getElementById('contacts-tbody');
@@ -757,9 +769,14 @@
         const t = selectedTemplate();
         if (!t) return;
         const n = recipientTotal();
+        const ccList = parseCc(ccInput.value);
+        const ccRow = ccList.length
+            ? `<div class="send-summary-row"><span class="label">CC</span><span class="value">${escapeHtml(ccList.join(', '))}</span></div>`
+            : '';
         sendSummaryBox.innerHTML = `
             <div class="send-summary-row"><span class="label">Template</span><span class="value">${escapeHtml(t.name)}</span></div>
             <div class="send-summary-row"><span class="label">Subject</span><span class="value">${escapeHtml(subjectInput.value.trim())}</span></div>
+            ${ccRow}
             <div class="send-summary-row"><span class="label">Recipients</span><span class="value count">${n}</span></div>`;
         sendError.hidden = true;
         openModal(sendModal);
@@ -774,6 +791,7 @@
         const payload = {
             template_id: t._id,
             subject: subjectInput.value.trim(),
+            cc: parseCc(ccInput.value),
         };
         if (allMatching) {
             payload.mode = 'all';
@@ -815,17 +833,32 @@
     let jobsTotal = 0;
     let jobsPoll = null;
 
+    const budgetBar = document.getElementById('budget-bar');
+
+    function formatResume(value) {
+        if (!value) return '';
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return '';
+        const now = new Date();
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return d.toDateString() === now.toDateString() ? `${hh}:${mm}` : formatDateTime(value);
+    }
+
     function progressCell(job) {
         const done = (job.sent || 0) + (job.failed || 0);
         const pct = job.total ? Math.round((done / job.total) * 100) : 0;
         let cls = '';
         if (job.status === 'completed') cls = 'done';
         else if (job.status === 'failed') cls = 'failed';
+        else if (job.status === 'cooldown') cls = 'cooldown';
         const failHtml = job.failed ? `<span class="fail">${job.failed} failed</span>` : '';
+        const coolHtml = job.status === 'cooldown' && job.resume_at
+            ? `<span class="cool">resumes ${escapeHtml(formatResume(job.resume_at))}</span>` : '';
         return `
             <div class="progress-cell">
                 <div class="progress-bar-track"><div class="progress-bar-fill ${cls}" style="width:${pct}%"></div></div>
-                <div class="progress-meta"><span>${job.sent || 0} / ${job.total || 0} sent</span>${failHtml}</div>
+                <div class="progress-meta"><span>${job.sent || 0} / ${job.total || 0} sent</span>${failHtml}${coolHtml}</div>
             </div>`;
     }
 
@@ -844,53 +877,76 @@
             </tr>`).join('');
     }
 
+    function setBudget(which, used, limit) {
+        const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+        document.getElementById(`budget-${which}-text`).textContent = `${used} / ${limit}`;
+        const fill = document.getElementById(`budget-${which}-fill`);
+        fill.style.width = `${pct}%`;
+        fill.classList.toggle('full', used >= limit);
+    }
+
+    async function loadBudget() {
+        try {
+            const res = await fetch('/api/send/budget', { headers: authHeaders() });
+            if (!res.ok) return;
+            const b = await res.json();
+            budgetBar.hidden = false;
+            setBudget('hour', b.sentLastHour, b.hourlyLimit);
+            setBudget('day', b.sentLastDay, b.dailyLimit);
+        } catch (e) { /* ignore */ }
+    }
+
+    function jobsActivity(items) {
+        const busy = items.filter((j) => j.status === 'running' || j.status === 'queued').length;
+        const cooling = items.filter((j) => j.status === 'cooldown').length;
+        const active = busy + cooling;
+        if (active > 0) { jobsRunningBadge.hidden = false; jobsRunningBadge.textContent = String(active); }
+        else jobsRunningBadge.hidden = true;
+        return { busy: busy > 0, cooling: cooling > 0 };
+    }
+
     async function loadJobs() {
+        loadBudget();
         try {
             const res = await fetch('/api/send/jobs/query', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ limit: 25, skip: (jobsPage - 1) * 25 }) });
-            if (res.status === 401) { window.location.replace('/login'); return; }
+            if (res.status === 401) { window.location.replace('/login'); return { busy: false, cooling: false }; }
             const data = await res.json();
             jobsTotal = data.total || 0;
             jobsCount.textContent = `${jobsTotal} total`;
-            renderJobs(data.items || []);
+            const items = data.items || [];
+            renderJobs(items);
             renderPagination(jobsPagination, jobsTotal, jobsPage, 25, (p) => { jobsPage = p; loadJobs(); });
-            const running = (data.items || []).filter((j) => j.status === 'running' || j.status === 'queued').length;
-            if (running > 0) { jobsRunningBadge.hidden = false; jobsRunningBadge.textContent = String(running); }
-            else jobsRunningBadge.hidden = true;
-            return running;
+            return jobsActivity(items);
         } catch (e) {
             console.error(e);
-            return 0;
+            return { busy: false, cooling: false };
         }
     }
 
-    function startJobsPoll() {
+    // Poll fast while sending, slowly while only cooling down, stop when idle.
+    async function pollJobsTick() {
+        const state = await loadJobs();
         stopJobsPoll();
-        jobsPoll = setInterval(async () => {
-            const running = await loadJobs();
-            if (!running) stopJobsPoll();
-        }, 2000);
+        if (state.busy) jobsPoll = setTimeout(pollJobsTick, 2500);
+        else if (state.cooling) jobsPoll = setTimeout(pollJobsTick, 20000);
     }
-    function stopJobsPoll() {
-        if (jobsPoll) { clearInterval(jobsPoll); jobsPoll = null; }
-    }
+    function startJobsPoll() { stopJobsPoll(); pollJobsTick(); }
+    function stopJobsPoll() { if (jobsPoll) { clearTimeout(jobsPoll); jobsPoll = null; } }
 
     // Keep the Jobs tab badge fresh on load even if not viewing it.
     async function refreshJobsBadge() {
-        const running = await loadJobsBadgeOnly();
-        if (running > 0 && activeTab !== 'jobs') {
-            // Light poll to keep badge moving while user is elsewhere.
-            setTimeout(refreshJobsBadge, 4000);
-        }
+        const active = await loadJobsBadgeOnly();
+        if (active > 0 && activeTab !== 'jobs') setTimeout(refreshJobsBadge, 8000);
     }
     async function loadJobsBadgeOnly() {
         try {
             const res = await fetch('/api/send/jobs/query', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ limit: 25 }) });
             if (!res.ok) return 0;
             const data = await res.json();
-            const running = (data.items || []).filter((j) => j.status === 'running' || j.status === 'queued').length;
-            if (running > 0) { jobsRunningBadge.hidden = false; jobsRunningBadge.textContent = String(running); }
+            const active = (data.items || []).filter((j) => ['running', 'queued', 'cooldown'].includes(j.status)).length;
+            if (active > 0) { jobsRunningBadge.hidden = false; jobsRunningBadge.textContent = String(active); }
             else jobsRunningBadge.hidden = true;
-            return running;
+            return active;
         } catch (e) { return 0; }
     }
 

@@ -7,6 +7,7 @@ async function createJob(req, res, next) {
             userId: req.userId,
             template_id: body.template_id,
             subject: body.subject,
+            cc: body.cc,
             mode: body.mode,
             contact_ids: Array.isArray(body.contact_ids) ? body.contact_ids : [],
             filters: body.filters || {},
@@ -65,10 +66,20 @@ async function historyTemplates(req, res, next) {
     }
 }
 
+async function budget(req, res, next) {
+    try {
+        const b = await sendService.getBudget();
+        return res.json(b);
+    } catch (err) {
+        return next(err);
+    }
+}
+
 module.exports = {
     createJob,
     listJobs,
     getJob,
     queryHistory,
     historyTemplates,
+    budget,
 };

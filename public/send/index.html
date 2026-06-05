@@ -53,6 +53,10 @@
                                 <label>Subject <span class="field-optional">— supports [[field]] tokens</span></label>
                                 <input type="text" id="subject-input" placeholder="e.g. An update for [[hotel_name]]" autocomplete="off">
                             </div>
+                            <div class="field">
+                                <label>CC <span class="field-optional">— comma-separated, copied on every email</span></label>
+                                <input type="text" id="cc-input" value="sales@vnpsolutions.com" placeholder="cc@example.com, another@example.com" autocomplete="off">
+                            </div>
                             <div class="template-fields" id="template-fields" hidden>
                                 <div class="template-fields-label">Template fields</div>
                                 <div class="field-chips" id="template-fields-chips"></div>
@@ -121,6 +125,16 @@
                         <div>
                             <h2 class="data-title">Send jobs <span class="data-count" id="jobs-count">0 total</span></h2>
                             <p class="data-sub">Bulk sends and how many have been delivered so far.</p>
+                        </div>
+                        <div class="budget-bar" id="budget-bar" hidden>
+                            <div class="budget-item">
+                                <div class="budget-head"><span>This hour</span><span id="budget-hour-text">0 / 0</span></div>
+                                <div class="budget-track"><div class="budget-fill" id="budget-hour-fill"></div></div>
+                            </div>
+                            <div class="budget-item">
+                                <div class="budget-head"><span>Today (24h)</span><span id="budget-day-text">0 / 0</span></div>
+                                <div class="budget-track"><div class="budget-fill" id="budget-day-fill"></div></div>
+                            </div>
                         </div>
                     </div>
                     <div class="data-table-wrap">

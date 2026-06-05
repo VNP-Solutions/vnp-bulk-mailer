@@ -199,10 +199,12 @@ async function sendPasswordResetEmail({ to, otp, firstName }) {
 
 // Generic campaign send — used by the bulk sender. Subject + html are already
 // rendered (tokens replaced) by the caller.
-async function sendRawEmail({ to, subject, html }) {
+async function sendRawEmail({ to, subject, html, cc }) {
     const mailer = getTransporter();
     const from = process.env.SMTP_FROM || process.env.EMAIL_USER;
-    return mailer.sendMail({ from, to, subject, html });
+    const mail = { from, to, subject, html };
+    if (cc && cc.length) mail.cc = cc;
+    return mailer.sendMail(mail);
 }
 
 module.exports = {

@@ -675,13 +675,57 @@
 .status-badge.partial  { background: rgba(255, 170, 50, 0.12); color: #FFB94B; }
 .status-badge.failed   { background: rgba(255, 92, 92, 0.12); color: #FF6B6B; }
 .status-badge.canceled { background: rgba(255, 255, 255, 0.06); color: rgba(255,255,255,0.5); }
+.status-badge.cooldown { background: rgba(176, 132, 239, 0.16); color: #B084EF; }
 
-.status-badge.running::before { animation: pulseDot 1.4s ease-in-out infinite; }
+.status-badge.running::before,
+.status-badge.cooldown::before { animation: pulseDot 1.4s ease-in-out infinite; }
 
 @keyframes pulseDot {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.4; transform: scale(0.7); }
 }
+
+.progress-bar-fill.cooldown { background: linear-gradient(90deg, #7C50C4 0%, #B084EF 100%); }
+.progress-meta .cool { color: #B084EF; }
+
+/* ============ Rolling rate-limit budget bar ============ */
+.budget-bar {
+    display: flex;
+    gap: 20px;
+    flex-shrink: 0;
+    align-items: flex-end;
+}
+
+.budget-bar[hidden] { display: none; }
+
+.budget-item { min-width: 150px; }
+
+.budget-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.budget-track {
+    height: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.budget-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2EC27E 0%, #4CD295 100%);
+    border-radius: 3px;
+    transition: width 0.4s ease-out, background 0.2s;
+}
+
+.budget-fill.full { background: linear-gradient(90deg, #E25555 0%, #FF6B6B 100%); }
 
 /* ============ History filters ============ */
 .history-filters {

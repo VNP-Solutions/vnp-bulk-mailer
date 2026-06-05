@@ -45,6 +45,8 @@ app.use((err, req, res, next) => {
 async function start() {
     try {
         await connectDatabase();
+        // Start the bulk-send worker/scheduler (rate-limited, resumes cooled jobs).
+        require('./services/sendService').startScheduler();
         app.listen(PORT, () => {
             console.log(`Server running at http://localhost:${PORT}`);
         });
